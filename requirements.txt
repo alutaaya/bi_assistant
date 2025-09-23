@@ -1,32 +1,32 @@
 # Core utilities
-streamlit
-python-dotenv
-requests
+streamlit==1.27.0
+python-dotenv==1.0.1
+requests==2.31.0
 
 # LangChain ecosystem
-langchain
-langchain-community
-langchain-groq
-langgraph
+langchain==0.1.169
+langchain-community==0.0.227
+langchain-groq==0.1.6
+langgraph==0.1.23
 
 # Vector stores & embeddings
-faiss-cpu
-sentence-transformers
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
 
 # PDF handling
-PyPDF2
-pypdf
+PyPDF2==3.1.1
+pypdf==3.14.1
 
 # Data science & plotting
-pandas
-numpy
-matplotlib
-seaborn
-statsmodels
+pandas==2.1.1
+numpy==1.26.0
+matplotlib==3.8.0
+seaborn==0.12.3
+statsmodels==0.14.1
 
 # PandasAI & OpenAI
-pandasai
-openai
+pandasai==0.7.0
+openai==0.27.8
 
 # Typing / utilities
-typing-extensions
+typing-extensions==4.7.1
