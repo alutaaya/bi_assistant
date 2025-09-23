@@ -1,0 +1,32 @@
+# Core utilities
+streamlit
+python-dotenv
+requests
+
+# LangChain ecosystem
+langchain
+langchain-community
+langchain-groq
+langgraph
+
+# Vector stores & embeddings
+faiss-cpu
+sentence-transformers
+
+# PDF handling
+PyPDF2
+pypdf
+
+# Data science & plotting
+pandas
+numpy
+matplotlib
+seaborn
+statsmodels
+
+# PandasAI & OpenAI
+pandasai
+openai
+
+# Typing / utilities
+typing-extensions
