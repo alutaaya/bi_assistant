@@ -322,11 +322,11 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
     llm = load_llm()
     
     # Wrap dataframe with PandasAI
-    pandas_ai = PandasAI(llm,enable_code_execution=True)
+    pandas_ai = PandasAI(llm)
     
     # Run adhoc query
     try:
-        result = pandas_ai.run(df, ask_stat, show_code=True)
+        result = pandas_ai.run(df, ask_stat, show_code=True, is_conversational_answer=True)
         state["adhoc_result"] = result
     except Exception as e:
         state["adhoc_result"] = f"Error executing PandasAI query: {e}"
