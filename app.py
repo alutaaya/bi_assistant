@@ -77,7 +77,7 @@ class appstate(TypedDict, total=False):
 
 def load_llm():
     api_key=st.secrets["OPENAI_API_KEY"]
-    return OpenAI(model="openai/gpt-oss-120b", temperature=0, api_key=api_key)
+    return OpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
 
 # ------------------------
 # Agents (minimal edits: fix typos, ensure returns, small safety)
