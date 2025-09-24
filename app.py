@@ -76,19 +76,25 @@ class appstate(TypedDict, total=False):
 #----Loading the llm to use for PandaAI
 
 def load_llm():
-    # Get key from Streamlit secrets or environment variable
-    openai_api = st.secrets["openai"]["api_key"] or os.getenv("OPENAI_API_KEY")
+    openai_api = None
 
+    # Try Streamlit secrets first
+    try:
+        openai_api = st.secrets["openai"]["api_key"]
+    except KeyError:
+        st.warning("OpenAI key not found in Streamlit secrets.")
+
+    # Fallback to environment variable
     if not openai_api:
-        st.error(
-            "❌ OpenAI API key not found. "
-            "Set it in Streamlit secrets (`[openai] api_key = 'YOUR_KEY'`) "
-            "or environment variable `OPENAI_API_KEY`."
-        )
+        openai_api = os.getenv("OPENAI_API_KEY")
+        if openai_api:
+            st.info("OpenAI key loaded from environment variable.")
+    
+    if not openai_api:
+        st.error("❌ OpenAI API key not found. Set it in Streamlit secrets or as environment variable `OPENAI_API_KEY`.")
         st.stop()
 
     return OpenAI(model="openai/gpt-oss-120b", temperature=0, api_key=openai_api)
-        
 
 
 # ------------------------
