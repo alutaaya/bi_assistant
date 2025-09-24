@@ -30,3 +30,4 @@ openai
 
 # Typing / utilities
 typing-extensions
+python-dotenv
