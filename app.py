@@ -334,12 +334,15 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
 
     # Optionally: convert result into a narrative and add to your vectorstore
     if "vectordb" in state:
-        narrative = f"Answer to '{ask_stat}': {result}"
-        new_doc = Document(page_content=narrative, metadata={"source": "adhoc_result"})
-        state["vectordb"].add_documents([new_doc])
+        try:
+            
+            narrative = f"Answer to '{ask_stat}': {result}"
+            new_doc = Document(page_content=narrative, metadata={"source": "adhoc_result"})
+            state["vectordb"].add_documents([new_doc])
 
         except Exception as e:
-        state["adhoc_result"] = f"Error with PandasAI: {e}"
+            
+            state["adhoc_result"] = f"Error with PandasAI: {e}"
 
     return state
 
