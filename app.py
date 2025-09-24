@@ -35,6 +35,7 @@ from typing import TypedDict, List, Any, Dict, Optional
 # PandaAI
 from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
+from pandasai import SmartDataframe
 
 # Load .env if present
 load_dotenv()
@@ -342,6 +343,30 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
 
 
 
+# ----- Agent for drawing adhoc visuals including tables and graphs 
+def smart_agent(state: appstate):
+    path = state.get("csv_path")
+    if not path:
+        state["adhoc_visual"] = "No CSV loaded."
+        return state
+    # Load CSV
+    df = pd.read_csv(path)
+    # Load LLM
+    llm = load_llm()
+    # Wrap with SmartDataframe
+      sdf = SmartDataframe(df, config={"llm": llm})
+    # Run chat query
+    ask_stat = state.get("ask_stat", "")
+    if not ask_stat:
+        state["adhoc_visual"] = "No query provided."
+        return state
+    answer = sdf.chat(ask_stat)
+    # Save to state
+    state["adhoc_visual"] = answer
+    return state
+    
+    
+    
 
 
 # ------------------------
@@ -370,8 +395,6 @@ def construct_graph2():
     """Build the state graph 2 for business assistant that answers adhoc statistics"""
     chain = StateGraph(appstate)
     chain.add_node("filepath", filepath_agent)
-    # note: restricted_adhoc_agent signature takes (state, ask_stat)
-    # LangGraph may pass only state; we'll wrap in a lambda when invoking the chain
     chain.add_node("adhoc", restricted_adhoc_agent)
     chain.set_entry_point("filepath")
     chain.add_edge("filepath", "adhoc")
@@ -453,9 +476,43 @@ def main():
     processgraph2 = construct_graph2()
 
     # --- Function for asking ad-hoc (we'll use processgraph2 but must supply ask_stat to adhoc agent)
-    ask_stat = st.text_input("Ask to perform ad-hoc analysis")
-    if st.button("Run Ad-hoc") and ask_stat:
+    ask_stat = st.text_input("Ask questions as follows: start with Key words(staistics:for visuals),(answer:for narrative),(insights:for insights) ")
+    qn_category=st.selectbox("choose your kind of question:",("smart_visuals","statistics narrative","insights"))
+    ask_stat=ask_stat.lower()
+    state={"ask_stat": ask_stat} 
+
+    if qn_category=="smart_visuals":
+        if st.button("Run") and ask_stat:
+            #####call the agent for smart visuals 
+    elif qn_category=="statistics narrative":
+        if st.button("Run") and ask_stat:
+            #### call the agent for writing statistics narratives 
+            x=processgraph2.invove(state)
+            st.write(x)
+            
+    else:
+        #### call the knowledgebase agent
+        
+    
+        ask_stat=ask_stat.lower()
         state["ask_stat"] = ask_stat
+        if 
+
+
+
+        # Dropdown (selectbox) with options
+option = st.selectbox(
+    "Choose a dataset to analyze:",
+    ("Sales Data", "Employee Data", "Customer Feedback")
+)
+
+st.write("You selected:", option)
+
+
+
+
+
+        
         # run filepath first to ensure csv_path is set
         state = filepath_agent(state)
         # call adhoc agent directly because restricted_adhoc_agent expects (state, ask_stat)
