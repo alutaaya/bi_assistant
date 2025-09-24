@@ -76,7 +76,7 @@ def load_llm():
 #----Loading the llm to use for PandaAI
 @st.cache_resource
 def load_llm2():
-    openai_api=st.secretes.get("openai_api") or os.getenv("openai_api")
+    openai_api=st.secrets.get("openai_api") or os.getenv("openai_api")
     if not openai_api:
         st.error("❌ ERROR: openai_api not found. Please set it in Streamlit secrets or .env file.")
         return None
@@ -328,7 +328,7 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
 
     # Wrap the dataframe with PandasAI SmartDataframe
     llm2=load_llm2()
-    pandas_ai=pandasAI(llm2)
+    pandas_ai = PandasAI(llm2)
     result=pandas_ai.run(df,ask_stat,show_code=True,is_conversational_answer=True)
     state["adhoc_result"] = result
 
