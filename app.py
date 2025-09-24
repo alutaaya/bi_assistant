@@ -33,7 +33,7 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Any, Dict, Optional
 
 # PandaAI
-from pandasai import pandasAI
+from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
 
 # Load .env if present
