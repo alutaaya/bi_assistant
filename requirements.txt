@@ -25,8 +25,8 @@ seaborn
 statsmodels
 
 # PandasAI & OpenAI
-##pandasai==0.2.2
-pandasai==2.2.3
+pandasai==0.2.2
+##pandasai==2.2.3
 
 openai
 
