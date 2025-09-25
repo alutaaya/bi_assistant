@@ -26,7 +26,7 @@ statsmodels
 
 # PandasAI & OpenAI
 ##pandasai==0.2.2
-pandasai>=3.0.0
+pandasai==2.2.3
 
 openai
 
