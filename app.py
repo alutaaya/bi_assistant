@@ -274,7 +274,7 @@ def vectorstore_agent(state: appstate):
 
 # Answering agent (kept your prompt and behavior; fixed response extraction)
 def answering_agent(state: appstate):
-    query = state.get("last_query", "")
+    query = state.get("ask_stat", "")
     vectorstore = state.get("vectordb", None)
     if not vectorstore or not query:
         return state
@@ -479,11 +479,15 @@ def main():
     ask_stat = st.text_input("Ask questions as follows: start with Key words(staistics:for visuals),(answer:for narrative),(insights:for insights) ")
     qn_category=st.selectbox("choose your kind of question:",("smart_visuals","statistics narrative","insights"))
     ask_stat=ask_stat.lower()
-    state={"ask_stat": ask_stat} 
+    state["ask_stat"]=ask_stat
 
     if qn_category=="smart_visuals":
         if st.button("Run") and ask_stat:
-            #####call the agent for smart visuals 
+            ##### call smart agent 
+            # run filepath to ensure csv_path
+            state = filepath_agent(state)
+            state = smart_agent(state)
+            st.write(state.get("adhoc_visual", "No output generated."))
     elif qn_category=="statistics narrative":
         if st.button("Run") and ask_stat:
             #### call the agent for writing statistics narratives 
@@ -491,52 +495,11 @@ def main():
             st.write(x)
             
     else:
-        #### call the knowledgebase agent
-        
-    
-        ask_stat=ask_stat.lower()
-        state["ask_stat"] = ask_stat
-        if 
+        #### call the answering agent 
+        if st.button("Run") and ask_stat:
+            y=processgraph.invoke(state)
+            st.write(y)
 
-
-
-        # Dropdown (selectbox) with options
-option = st.selectbox(
-    "Choose a dataset to analyze:",
-    ("Sales Data", "Employee Data", "Customer Feedback")
-)
-
-st.write("You selected:", option)
-
-
-
-
-
-        
-        # run filepath first to ensure csv_path is set
-        state = filepath_agent(state)
-        # call adhoc agent directly because restricted_adhoc_agent expects (state, ask_stat)
-        state = restricted_adhoc_agent(state, ask_stat)
-        # display result
-        st.markdown(f"**Business assistant:** {state.get('adhoc_result')}")
-        st.session_state["chat_history"].append((state.get("ask_stat"), str(state.get("adhoc_result"))))
-
-    # -- Chat input (full QA flow)
-    user_q = st.text_input("Ask questions to be provided with business insights")
-    if st.button("Ask") and user_q:
-        state["last_query"] = user_q
-        # run filepath to ensure csv_path
-        state = filepath_agent(state)
-        # run graph1: this will perform stats->narrative->knowledgebase->vectorstore->answering
-        # note: vectorstore_agent in this code returns state; ensure we call it
-        state = stats_agent(state)
-        state = narrative_agent(state)
-        state = knowledgebase_agent(state)
-        state = vectorstore_agent(state)
-        state = answering_agent(state)
-        # display answer
-        st.markdown(f"**Business assistant:** {state.get('query_answer')}")
-        st.session_state["chat_history"].append((state.get("last_query"), state.get("query_answer")))
 
     # ----- Displaying summary statistics (manual trigger)
     if st.button("Statistical_Summary"):
