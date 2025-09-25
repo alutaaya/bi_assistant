@@ -358,16 +358,24 @@ def smart_agent(state: appstate):
     llm = load_llm()
     # Wrap with SmartDataframe
     ##sdf = SmartDataframe(df, config={"llm": llm})
-    pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
+    ###pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
     # Run chat query
     ask_stat = state.get("ask_stat", "")
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
+    output=PandasAI(llm)
+    p_output=output.run(df,ask_stat,show_code=True,is_conversational_answer=True)
+    if isinstance(p_output,pd.Dataframe):
+        st.subheader("Results")
+        st.dataframe(p_output)
+   
+    
     ##answer = sdf.chat(ask_stat)
-    answer=pandas_ai_df.chat(ask_stat)
+    ###answer=pandas_ai_df.chat(ask_stat)
     # Save to state
-    state["adhoc_visual"] = answer
+    ###state["adhoc_visual"] = answer
+    state["adhoc_visual"] = p_output
     return state
     
     
