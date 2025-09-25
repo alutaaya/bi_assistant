@@ -35,6 +35,7 @@ from typing import TypedDict, List, Any, Dict, Optional
 # PandaAI
 from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
+from pandasai.responses.streamlit_response import StreamlitResponse
 ##from pandasai import Agent
 ###from pandasai_litellm.litellm import LiteLLM
 ##from pandasai import SmartDataframe
