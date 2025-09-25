@@ -353,27 +353,24 @@ def smart_agent(state: appstate):
     if not path:
         state["adhoc_visual"] = "No CSV loaded."
         return state
+
     # Load CSV
     df = pd.read_csv(path)
+
     # Load LLM
     llm = load_llm()
     ask_stat = state.get("ask_stat", "")
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
+
+    # Use PandasAI correctly
     pandas_ai = PandasAI(llm, conversational=False)
-    answer=pandas_ai(df,ask_stat)
-    # Wrap with SmartDataframe
-    ##sdf = SmartDataframe(df, config={"llm": llm})
-    ###pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
-    # Run chat query
-    
-    ##answer = sdf.chat(ask_stat)
-    ###answer=pandas_ai_df.chat(ask_stat)
+    answer = pandas_ai.run(df, ask_stat, show_code=True, is_conversational_answer=True)
+
     # Save to state
     state["adhoc_visual"] = answer
     return state
-    
     
     
 
