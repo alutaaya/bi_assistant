@@ -25,7 +25,7 @@ seaborn
 statsmodels
 
 # PandasAI & OpenAI
-pandasai==3.0.0
+pandasai==2.3.2
 
 
 openai
