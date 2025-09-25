@@ -347,9 +347,24 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
 
 
 
+class SimpleStreamlitResponse:
+    def handle(self, result):
+        # If it's a pandas DataFrame or Series → show as table
+        if isinstance(result, pd.DataFrame) or isinstance(result, pd.Series):
+            st.dataframe(result)
+        # If it's a matplotlib figure-like object
+        elif hasattr(result, "savefig") or hasattr(result, "gca"):
+            # try to render as figure
+            try:
+                st.pyplot(result)
+            except Exception:
+                st.write("Could not render figure, here's the result:")
+                st.write(result)
+        else:
+            # fallback for text, dicts, etc.
+            st.write(result)
 
-# ----- Agent for drawing adhoc visuals including tables and graphs 
-def smart_agent(state: appstate):
+def smart_agent(state: dict):
     path = state.get("csv_path")
     if not path:
         state["adhoc_visual"] = "No CSV loaded."
@@ -358,21 +373,27 @@ def smart_agent(state: appstate):
     df = pd.read_csv(path)
     llm = load_llm()
     ask_stat = state.get("ask_stat", "")
-
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
 
-    # ✅ configure PandasAI with StreamlitResponse
-    pandas_ai = PandasAI(llm, conversational=False, response_parser=StreamlitResponse())
+    # Use PandasAI in the version you have
+    pandas_ai = PandasAI(llm, conversational=False)
 
-    # Run query
-    answer = pandas_ai.run(df, ask_stat, show_code=True)
+    try:
+        # run the query
+        result = pandas_ai.run(df, ask_stat, show_code=True)
+    except Exception as e:
+        state["adhoc_visual"] = f"Error executing PandasAI query: {e}"
+        return state
 
-    # PandasAI will now render charts directly in your Streamlit app
-    # Save textual answer to state (if any)
-    state["adhoc_visual"] = answer
+    # Render result via Streamlit
+    SimpleStreamlitResponse().handle(result)
+
+    # Save textual or raw result to state (if needed)
+    state["adhoc_visual"] = result
     return state
+
     
 
 
