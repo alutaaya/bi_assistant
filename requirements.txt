@@ -25,7 +25,7 @@ seaborn
 statsmodels
 
 # PandasAI & OpenAI
-pandasai[connectors]>=2.2.0
+pandasai==0.2.2
 
 
 openai
