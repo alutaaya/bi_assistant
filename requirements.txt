@@ -26,6 +26,7 @@ statsmodels
 
 # PandasAI & OpenAI
 pandasai>=3.0.0b2
+litellm
 
 openai
 
