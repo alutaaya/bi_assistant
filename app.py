@@ -33,9 +33,9 @@ from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Any, Dict, Optional
 
 # PandaAI
-##from pandasai import PandasAI
-##from pandasai.llm.openai import OpenAI
-from pandasai import Agent
+from pandasai import PandasAI
+from pandasai.llm.openai import OpenAI
+##from pandasai import Agent
 ###from pandasai_litellm.litellm import LiteLLM
 ##from pandasai import SmartDataframe
 ##import pandasai as pai
@@ -357,26 +357,21 @@ def smart_agent(state: appstate):
     df = pd.read_csv(path)
     # Load LLM
     llm = load_llm()
-    # Wrap with SmartDataframe
-    ##sdf = SmartDataframe(df, config={"llm": llm})
-    ###pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
-    # Run chat query
     ask_stat = state.get("ask_stat", "")
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
-    output=PandasAI(llm)
-    p_output=output.run(df,ask_stat,show_code=True,is_conversational_answer=True)
-    if isinstance(p_output,pd.Dataframe):
-        st.subheader("Results")
-        st.dataframe(p_output)
-   
+    pandas_ai = PandasAI(llm, conversational=False)
+    answer=pandas_ai(df,ask_stat)
+    # Wrap with SmartDataframe
+    ##sdf = SmartDataframe(df, config={"llm": llm})
+    ###pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
+    # Run chat query
     
     ##answer = sdf.chat(ask_stat)
     ###answer=pandas_ai_df.chat(ask_stat)
     # Save to state
-    ###state["adhoc_visual"] = answer
-    state["adhoc_visual"] = p_output
+    state["adhoc_visual"] = answer
     return state
     
     
