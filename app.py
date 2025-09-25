@@ -354,7 +354,7 @@ def smart_agent(state: appstate):
     # Load LLM
     llm = load_llm()
     # Wrap with SmartDataframe
-      sdf = SmartDataframe(df, config={"llm": llm})
+    sdf = SmartDataframe(df, config={"llm": llm})
     # Run chat query
     ask_stat = state.get("ask_stat", "")
     if not ask_stat:
