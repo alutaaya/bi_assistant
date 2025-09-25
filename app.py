@@ -355,24 +355,24 @@ def smart_agent(state: appstate):
         state["adhoc_visual"] = "No CSV loaded."
         return state
 
-    # Load CSV
     df = pd.read_csv(path)
-
-    # Load LLM
     llm = load_llm()
     ask_stat = state.get("ask_stat", "")
+
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
 
-    # Use PandasAI correctly
-    pandas_ai = PandasAI(llm, conversational=False)
-    answer = pandas_ai.run(df, ask_stat, show_code=True, is_conversational_answer=True)
+    # ✅ configure PandasAI with StreamlitResponse
+    pandas_ai = PandasAI(llm, conversational=False, response_parser=StreamlitResponse())
 
-    # Save to state
+    # Run query
+    answer = pandas_ai.run(df, ask_stat, show_code=True)
+
+    # PandasAI will now render charts directly in your Streamlit app
+    # Save textual answer to state (if any)
     state["adhoc_visual"] = answer
     return state
-    
     
 
 
