@@ -35,7 +35,8 @@ from typing import TypedDict, List, Any, Dict, Optional
 # PandaAI
 from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
-from pandasai.smart_dataframe import SmartDataframe
+###from pandasai import SmartDataframe
+import pandasai as pai
 
 # Load .env if present
 load_dotenv()
@@ -354,13 +355,15 @@ def smart_agent(state: appstate):
     # Load LLM
     llm = load_llm()
     # Wrap with SmartDataframe
-    sdf = SmartDataframe(df, config={"llm": llm})
+    ###sdf = SmartDataframe(df, config={"llm": llm})
+    pandas_ai_df=pai.DataFrame(df,config={"llm":llm})
     # Run chat query
     ask_stat = state.get("ask_stat", "")
     if not ask_stat:
         state["adhoc_visual"] = "No query provided."
         return state
-    answer = sdf.chat(ask_stat)
+    ### answer = sdf.chat(ask_stat)
+    answer=pandas_ai_df.chat(ask_stat)
     # Save to state
     state["adhoc_visual"] = answer
     return state
