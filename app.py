@@ -300,13 +300,15 @@ def answering_agent(state: appstate):
     return state
 
 
-def restricted_adhoc_agent(state: dict, ask_stat: str):
+def restricted_adhoc_agent(state: dict):
     """
     Use PandasAI to answer ad-hoc statistical questions on the uploaded CSV.
+    This version only mutates state in-place and ensures a proper return type.
     """
+    ask_stat = state.get("ask_stat", "")
     path = state.get("csv_path")
-    if not path:
-        state["adhoc_result"] = "No CSV loaded."
+    if not path or not ask_stat:
+        state["adhoc_result"] = "No CSV loaded or no question provided."
         return state
 
     df = pd.read_csv(path)
@@ -318,27 +320,18 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
         df["year"] = df["date"].dt.year
         df["month"] = df["date"].dt.month
 
-    # Load LLM securely
+    # Load LLM
     llm = load_llm()
-    
-    # Wrap dataframe with PandasAI
     pandas_ai = PandasAI(llm)
-    
-    # Run adhoc query
+
+    # Run query safely
     try:
         result = pandas_ai.run(df, ask_stat, show_code=True, is_conversational_answer=True)
-        state["adhoc_result"] = result
+        state["adhoc_result"] = str(result)  # ensure string
     except Exception as e:
         state["adhoc_result"] = f"Error executing PandasAI query: {e}"
 
-    # Optionally add to vectorstore
-    if "vectordb" in state and state["vectordb"]:
-        narrative = f"Answer to '{ask_stat}': {state['adhoc_result']}"
-        new_doc = Document(page_content=narrative, metadata={"source": "adhoc_result"})
-        state["vectordb"].add_documents([new_doc])
-
-    return state
-
+    return state  # ✅ always return state dict
 
 
 
