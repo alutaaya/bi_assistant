@@ -452,10 +452,13 @@ def main():
     ask_stat=ask_stat.strip().lower()
     state["ask_stat"] = ask_stat
     if st.button("Ask"):
-    if not ask_stat:
-        st.warning("Please type a question before clicking Ask.")
-    else:
-        state["ask_stat"] = ask_stat  # store question in state
+        
+        if not ask_stat:
+            
+            st.warning("Please type a question before clicking Ask.")
+        else:
+            
+            state["ask_stat"] = ask_stat  # store question in state
 
         if choice == "chat_with_csv":
             # Use plain dict, not st.session_state
