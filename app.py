@@ -273,7 +273,7 @@ def vectorstore_agent(state: appstate):
 
 # Answering agent (kept your prompt and behavior; fixed response extraction)
 def answering_agent(state: appstate):
-    query = state.get("last_query", "")
+    query = state.get("ask_stat", "")
     vectorstore = state.get("vectordb", None)
     if not vectorstore or not query:
         return state
@@ -453,33 +453,31 @@ def main():
     processgraph2 = construct_graph2()
 
     # --- Function for asking ad-hoc (we'll use processgraph2 but must supply ask_stat to adhoc agent)
-    ask_stat = st.text_input("Ask to perform ad-hoc analysis")
-    if st.button("Run Ad-hoc") and ask_stat:
-        state["ask_stat"] = ask_stat
-        # run filepath first to ensure csv_path is set
-        state = filepath_agent(state)
-        # call adhoc agent directly because restricted_adhoc_agent expects (state, ask_stat)
-        state = restricted_adhoc_agent(state, ask_stat)
-        # display result
-        st.markdown(f"**Business assistant:** {state.get('adhoc_result')}")
-        st.session_state["chat_history"].append((state.get("ask_stat"), str(state.get("adhoc_result"))))
+    ask_stat=st.text_input("Ask a question")
+    ask_stat=ask_stat.strip().lower()
+    options=["chat_with_csv", "ask_for_insights"]
+    choice = st.selectbox("Select an option:", ["--Select--"] + options)
+    state["ask_stat"] = ask_stat
+    if choice == "chat_with_csv":
+        if st.button("Ask"):
+            if ask_stat:
+                x = processgraph2.invoke(st.session_state)
+                st.write(x)
+                st.session_state["chat_history"].append((state.get("ask_stat"), str(state.get("adhoc_result"))))
+            else:
+                st.warning("Please type a question before clicking Ask.")
 
-    # -- Chat input (full QA flow)
-    user_q = st.text_input("Ask questions to be provided with business insights")
-    if st.button("Ask") and user_q:
-        state["last_query"] = user_q
-        # run filepath to ensure csv_path
-        state = filepath_agent(state)
-        # run graph1: this will perform stats->narrative->knowledgebase->vectorstore->answering
-        # note: vectorstore_agent in this code returns state; ensure we call it
-        state = stats_agent(state)
-        state = narrative_agent(state)
-        state = knowledgebase_agent(state)
-        state = vectorstore_agent(state)
-        state = answering_agent(state)
-        # display answer
-        st.markdown(f"**Business assistant:** {state.get('query_answer')}")
-        st.session_state["chat_history"].append((state.get("last_query"), state.get("query_answer")))
+    else:
+        if st.button("Ask"):
+            if ask_stat:
+                y=processgraph.invoke(st.session_state)
+                st.write(y)
+                st.session_state["chat_history"].append((state.get("ask_stat"), state.get("query_answer")))
+            else:
+                st.warning("Please type a question before clicking Ask.")
+        
+    
+  
 
     # ----- Displaying summary statistics (manual trigger)
     if st.button("Statistical_Summary"):
