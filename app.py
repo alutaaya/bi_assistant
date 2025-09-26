@@ -135,26 +135,26 @@ def stats_agent(state: appstate):
     st.dataframe(region_summary_df)
 
     # median customer age
-    summary["Av_Cust_age"] = df.groupby(["Region"])["Customer_Age"].median().to_dict()
-    cust_age_df = df.groupby(["Region"])["Customer_Age"].median().reset_index()
+    summary["Av_Cust_age"] = df.groupby(["Region"])["age"].median().to_dict()
+    cust_age_df = df.groupby(["Region"])["age"].median().reset_index()
     st.markdown("### Median Customer age per region")
     st.dataframe(cust_age_df)
 
     # gender
-    summary["cust_gender"] = df.groupby(["Customer_Gender"])["Sales"].sum().to_dict()
-    cust_gender_df = df.groupby(["Customer_Gender"])["Sales"].sum().reset_index()
+    summary["cust_gender"] = df.groupby(["sex"])["Sales"].sum().to_dict()
+    cust_gender_df = df.groupby(["sex"])["Sales"].sum().reset_index()
     st.markdown("### Sales by Customer Gender")
     st.dataframe(cust_gender_df)
 
     # customer satisfaction median
-    summary["cust_satistifaction"] = df.groupby(["Product"])["Customer_Satisfaction"].median().to_dict()
-    cust_sat_df = df.groupby(["Product"])["Customer_Satisfaction"].median().reset_index()
+    summary["cust_satistifaction"] = df.groupby(["Product"])["satistifaction"].median().to_dict()
+    cust_sat_df = df.groupby(["Product"])["satistifaction"].median().reset_index()
     st.markdown("### Median Customer Satisfaction by product")
     st.dataframe(cust_sat_df)
 
     # add yearly trends to summary (optional)
     yearly_sales = df.groupby("year")["Sales"].sum().to_dict()
-    yearly_cust_sat = df.groupby("year")["Customer_Satisfaction"].median().to_dict()
+    yearly_cust_sat = df.groupby("year")["satistifaction"].median().to_dict()
     ##-- i do no want to show this  summary["yearly_sales_trend"] = yearly_sales
     ##-- i do not want to show this  summary["yearly_cust_satistifaction_trend"] = yearly_cust_sat
 
@@ -177,7 +177,7 @@ def visualisation_agent(state: appstate):
     df["month"] = df["date"].dt.month
 
     yearly_sales = df.groupby("year")["Sales"].sum().to_dict()
-    yearly_cust_sat = df.groupby("year")["Customer_Satisfaction"].median().to_dict()
+    yearly_cust_sat = df.groupby("year")["satistifaction"].median().to_dict()
 
     visuals["yearly_sales_trend"] = yearly_sales
     visuals["yearly_cust_sat_trend"] = yearly_cust_sat
