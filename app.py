@@ -11,6 +11,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
+from langchain.chat_models import ChatOpenAI
 
 # PDF & text splitting
 from PyPDF2 import PdfReader
@@ -77,7 +78,7 @@ class appstate(TypedDict, total=False):
 
 def load_llm():
     api_key=st.secrets["OPENAI_API_KEY"]
-    return OpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
+    return ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
 
 # ------------------------
 # Agents (minimal edits: fix typos, ensure returns, small safety)
@@ -210,25 +211,28 @@ def visualisation_agent(state: appstate):
 
 # Narrative agent (fixed name and ensured we use load_llm safely)
 def narrative_agent(state: appstate):
-    summary = state.get("statistics_summary")
+    summary = state.get("adhoc_result")
     if not summary:
         return state
-    prompt = f"You are a data analyst, given the JSON summary: {summary}. Write concise bullets of narrative providing necessary insights, separated by theme (sales, region, customers)."
+
+    prompt = f"You are a data analyst, given the JSON summary: {summary}. Write concise bullets of narrative providing necessary insights."
+
     llm = load_llm()
     if llm is None:
         return state
-    response = llm.predict(prompt)
-    # make sure we extract text if predict returns an object
-    if hasattr(response, "content"):
-        text = response.content
-    else:
-        text = response
+
+    # Use predict method for ChatOpenAI
+    try:
+        response = llm.predict(prompt)  # ✅ ChatOpenAI has .predict
+    except Exception as e:
+        state["narrative_chunks"] = [f"Error generating narrative: {e}"]
+        return state
+
+    # split text into chunks
     splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
-    chunks = splitter.split_text(text)
+    chunks = splitter.split_text(response)
     state["narrative_chunks"] = chunks
     return state
-
-
 # Knowledgebase agent: create Document objects from narrative and PDFs (kept your logic)
 def knowledgebase_agent(state: appstate):
     chunks = state.get("narrative_chunks", [])
