@@ -451,23 +451,31 @@ def main():
     ask_stat=st.text_input("Ask a question")
     ask_stat=ask_stat.strip().lower()
     state["ask_stat"] = ask_stat
-    if choice == "chat_with_csv":
-        if st.button("Ask"):
-            if ask_stat:
-                x = processgraph2.invoke(st.session_state)
-                st.write(x)
-                st.session_state["chat_history"].append((state.get("ask_stat"), str(state.get("adhoc_result"))))
-            else:
-                st.warning("Please type a question before clicking Ask.")
-
+    if st.button("Ask"):
+    if not ask_stat:
+        st.warning("Please type a question before clicking Ask.")
     else:
-        if st.button("Ask"):
-            if ask_stat:
-                y=processgraph.invoke(st.session_state)
-                st.write(y)
-                st.session_state["chat_history"].append((state.get("ask_stat"), state.get("query_answer")))
-            else:
-                st.warning("Please type a question before clicking Ask.")
+        state["ask_stat"] = ask_stat  # store question in state
+
+        if choice == "chat_with_csv":
+            # Use plain dict, not st.session_state
+            state_result = processgraph2.invoke(state.copy())  # ✅ pass a copy
+            result_text = state_result.get("adhoc_result", "No result")
+            st.write(result_text)
+            # update chat history
+            st.session_state["chat_history"].append((ask_stat, str(result_text)))
+            # optionally sync back some state to session
+            st.session_state["adhoc_result"] = result_text
+
+        elif choice == "ask_for_insights":
+            state_result = processgraph.invoke(state.copy())  # ✅ pass a copy
+            result_text = state_result.get("query_answer", "No result")
+            st.write(result_text)
+            st.session_state["chat_history"].append((ask_stat, str(result_text)))
+            st.session_state["query_answer"] = result_text
+
+        else:
+            st.warning("Please select a valid option from the dropdown.")
         
     
   
