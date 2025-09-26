@@ -78,7 +78,15 @@ class appstate(TypedDict, total=False):
 
 def load_llm():
     api_key=st.secrets["OPENAI_API_KEY"]
+    return OpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
+
+
+def load_llm2():
+    api_key=st.secrets["OPENAI_API_KEY"]
     return ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
+
+
+
 
 # ------------------------
 # Agents (minimal edits: fix typos, ensure returns, small safety)
@@ -217,7 +225,7 @@ def narrative_agent(state: appstate):
 
     prompt = f"You are a data analyst, given the JSON summary: {summary}. Write concise bullets of narrative providing necessary insights."
 
-    llm = load_llm()
+    llm = load_llm2()
     if llm is None:
         return state
 
@@ -291,7 +299,7 @@ def answering_agent(state: appstate):
         "If the answer is not in the context, say you don't know. Be concise.\n\n"
         f"Context:\n{context}\n\nQuestion:\n{query}\nAnswer:"
     )
-    llm = load_llm()
+    llm = load_llm2()
     if llm is None:
         return state
     response = llm.predict(prompt)
