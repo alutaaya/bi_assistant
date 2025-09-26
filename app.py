@@ -37,7 +37,7 @@ from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
 ##from pandasai import Agent
 ###from pandasai_litellm.litellm import LiteLLM
-##from pandasai import SmartDataframe
+from pandasai import SmartDataframe
 ##import pandasai as pai
 ###from pandasai.smart_data_frame import SmartDataframe
 
