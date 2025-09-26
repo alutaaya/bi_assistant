@@ -18,14 +18,14 @@ PyPDF2
 pypdf
 
 # Data science & plotting
-pandas
+pandas==2.2.2
 numpy
 matplotlib
 seaborn
 statsmodels
 
 # PandasAI & OpenAI
-pandasai==0.2.2
+pandasai
 
 
 openai
