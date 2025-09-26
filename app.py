@@ -389,7 +389,11 @@ def construct_graph2():
 # ------------------------
 def main():
     st.set_page_config(layout="wide")
-    st.title("Insight Business Assistant")
+    st.markdown(
+    "<h1 style='text-align: center; font-weight: bold;'>InsightForge Business Assistant</h1>",
+    unsafe_allow_html=True)
+
+    ##st.title("InsightForge Business Assistant")
 
     # Initialize an app state dict (TypedDict is static typing; at runtime we use a normal dict)
     state: appstate = {
@@ -513,10 +517,10 @@ def main():
         st.session_state["chat_history"] = []
 
     # Display chat history
-    for q, a in st.session_state["chat_history"]:
-        st.markdown(f"**You:** {q}")
-        st.markdown(f"**Assistant:** {a}")
-        st.markdown("---")
+    ##for q, a in st.session_state["chat_history"]:
+        ##st.markdown(f"**You:** {q}")
+        ##st.markdown(f"**Assistant:** {a}")
+        ##st.markdown("---")
 
 
 if __name__ == "__main__":
