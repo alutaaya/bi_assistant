@@ -327,7 +327,7 @@ def restricted_adhoc_agent(state: dict):
     # Preprocess date column safely
     df.columns = df.columns.str.strip()
     if "Date" in df.columns:
-        df["date"] = pd.to_datetime(df["Date"],format="%d/%m/%Y" errors="coerce")
+        df["date"] = pd.to_datetime(df["Date"],format="%d/%m/%Y", errors="coerce")
         df["year"] = df["date"].dt.year
         df["month"] = df["date"].dt.month
 
