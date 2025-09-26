@@ -326,6 +326,7 @@ def restricted_adhoc_agent(state: dict):
     df = pd.read_csv(path)
 
     # Preprocess date column safely
+    df.columns = df.columns.str.strip()
     if "Date" in df.columns:
         df["Date"] = df["Date"].str.strip()
         df["date"] = pd.to_datetime(df["Date"], errors="coerce")
