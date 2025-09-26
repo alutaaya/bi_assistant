@@ -390,7 +390,7 @@ def construct_graph2():
 def main():
     st.set_page_config(layout="wide")
     st.markdown(
-    "<h1 style='text-align: center; font-weight: bold;'>InsightForge Business Assistant</h1>",
+    "<h1 style='text-align: center; font-weight: bold;color: blue;'>InsightForge Business Assistant</h1>",
     unsafe_allow_html=True)
 
     ##st.title("InsightForge Business Assistant")
