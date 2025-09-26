@@ -35,11 +35,6 @@ from typing import TypedDict, List, Any, Dict, Optional
 # PandaAI
 from pandasai import PandasAI
 from pandasai.llm.openai import OpenAI
-##from pandasai import Agent
-###from pandasai_litellm.litellm import LiteLLM
-##from pandasai import SmartDataframe
-##import pandasai as pai
-###from pandasai.smart_data_frame import SmartDataframe
 
 # Load .env if present
 load_dotenv()
@@ -278,7 +273,7 @@ def vectorstore_agent(state: appstate):
 
 # Answering agent (kept your prompt and behavior; fixed response extraction)
 def answering_agent(state: appstate):
-    query = state.get("ask_stat", "")
+    query = state.get("last_query", "")
     vectorstore = state.get("vectordb", None)
     if not vectorstore or not query:
         return state
@@ -346,54 +341,7 @@ def restricted_adhoc_agent(state: dict, ask_stat: str):
 
 
 
-class SimpleStreamlitResponse:
-    def handle(self, result):
-        # If it's a pandas DataFrame or Series → show as table
-        if isinstance(result, pd.DataFrame) or isinstance(result, pd.Series):
-            st.dataframe(result)
-        # If it's a matplotlib figure-like object
-        elif hasattr(result, "savefig") or hasattr(result, "gca"):
-            # try to render as figure
-            try:
-                st.pyplot(result)
-            except Exception:
-                st.write("Could not render figure, here's the result:")
-                st.write(result)
-        else:
-            # fallback for text, dicts, etc.
-            st.write(result)
 
-def smart_agent(state: dict):
-    path = state.get("csv_path")
-    if not path:
-        state["adhoc_visual"] = "No CSV loaded."
-        return state
-
-    df = pd.read_csv(path)
-    llm = load_llm()
-    ask_stat = state.get("ask_stat", "")
-    if not ask_stat:
-        state["adhoc_visual"] = "No query provided."
-        return state
-
-    # Use PandasAI in the version you have
-    pandas_ai = PandasAI(llm, conversational=False)
-
-    try:
-        # run the query
-        result = pandas_ai.run(df, ask_stat, show_code=True)
-    except Exception as e:
-        state["adhoc_visual"] = f"Error executing PandasAI query: {e}"
-        return state
-
-    # Render result via Streamlit
-    SimpleStreamlitResponse().handle(result)
-
-    # Save textual or raw result to state (if needed)
-    state["adhoc_visual"] = result
-    return state
-
-    
 
 
 # ------------------------
@@ -422,6 +370,8 @@ def construct_graph2():
     """Build the state graph 2 for business assistant that answers adhoc statistics"""
     chain = StateGraph(appstate)
     chain.add_node("filepath", filepath_agent)
+    # note: restricted_adhoc_agent signature takes (state, ask_stat)
+    # LangGraph may pass only state; we'll wrap in a lambda when invoking the chain
     chain.add_node("adhoc", restricted_adhoc_agent)
     chain.set_entry_point("filepath")
     chain.add_edge("filepath", "adhoc")
@@ -503,30 +453,33 @@ def main():
     processgraph2 = construct_graph2()
 
     # --- Function for asking ad-hoc (we'll use processgraph2 but must supply ask_stat to adhoc agent)
-    ask_stat = st.text_input("Ask questions as follows: start with Key words(staistics:for visuals),(answer:for narrative),(insights:for insights) ")
-    qn_category=st.selectbox("choose your kind of question:",("smart_visuals","statistics narrative","insights"))
-    ask_stat=ask_stat.lower()
-    state["ask_stat"]=ask_stat
+    ask_stat = st.text_input("Ask to perform ad-hoc analysis")
+    if st.button("Run Ad-hoc") and ask_stat:
+        state["ask_stat"] = ask_stat
+        # run filepath first to ensure csv_path is set
+        state = filepath_agent(state)
+        # call adhoc agent directly because restricted_adhoc_agent expects (state, ask_stat)
+        state = restricted_adhoc_agent(state, ask_stat)
+        # display result
+        st.markdown(f"**Business assistant:** {state.get('adhoc_result')}")
+        st.session_state["chat_history"].append((state.get("ask_stat"), str(state.get("adhoc_result"))))
 
-    if qn_category=="smart_visuals":
-        if st.button("Run") and ask_stat:
-            ##### call smart agent 
-            # run filepath to ensure csv_path
-            state = filepath_agent(state)
-            state = smart_agent(state)
-            st.write(state.get("adhoc_visual", "No output generated."))
-    elif qn_category=="statistics narrative":
-        if st.button("Run") and ask_stat:
-            #### call the agent for writing statistics narratives 
-            x=processgraph2.invove(state)
-            st.write(x)
-            
-    else:
-        #### call the answering agent 
-        if st.button("Run") and ask_stat:
-            y=processgraph.invoke(state)
-            st.write(y)
-
+    # -- Chat input (full QA flow)
+    user_q = st.text_input("Ask questions to be provided with business insights")
+    if st.button("Ask") and user_q:
+        state["last_query"] = user_q
+        # run filepath to ensure csv_path
+        state = filepath_agent(state)
+        # run graph1: this will perform stats->narrative->knowledgebase->vectorstore->answering
+        # note: vectorstore_agent in this code returns state; ensure we call it
+        state = stats_agent(state)
+        state = narrative_agent(state)
+        state = knowledgebase_agent(state)
+        state = vectorstore_agent(state)
+        state = answering_agent(state)
+        # display answer
+        st.markdown(f"**Business assistant:** {state.get('query_answer')}")
+        st.session_state["chat_history"].append((state.get("last_query"), state.get("query_answer")))
 
     # ----- Displaying summary statistics (manual trigger)
     if st.button("Statistical_Summary"):
