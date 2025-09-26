@@ -453,10 +453,10 @@ def main():
     processgraph2 = construct_graph2()
 
     # --- Function for asking ad-hoc (we'll use processgraph2 but must supply ask_stat to adhoc agent)
-    ask_stat=st.text_input("Ask a question")
-    ask_stat=ask_stat.strip().lower()
     options=["chat_with_csv", "ask_for_insights"]
     choice = st.selectbox("Select an option:", ["--Select--"] + options)
+    ask_stat=st.text_input("Ask a question")
+    ask_stat=ask_stat.strip().lower()
     state["ask_stat"] = ask_stat
     if choice == "chat_with_csv":
         if st.button("Ask"):
