@@ -468,14 +468,10 @@ def main():
     ask_stat=ask_stat.strip().lower()
     state["ask_stat"] = ask_stat
     if st.button("Ask"):
-        
         if not ask_stat:
-            
             st.warning("Please type a question before clicking Ask.")
         else:
-            
             state["ask_stat"] = ask_stat  # store question in state
-
         if choice == "chat_with_csv":
             # Use plain dict, not st.session_state
             state_result = processgraph2.invoke(state.copy())  # ✅ pass a copy
@@ -492,8 +488,7 @@ def main():
             st.write(result_text)
             st.session_state["chat_history"].append((ask_stat, str(result_text)))
             st.session_state["query_answer"] = result_text
-
-        else:
+    else:
             st.warning("Please select a valid option from the dropdown.")
         
     
