@@ -223,7 +223,7 @@ def narrative_agent(state: appstate):
     if not summary:
         return state
 
-    prompt = f"You are a data analyst, given the JSON summary: {summary}. Write concise bullets of narrative providing necessary insights."
+    prompt = f"You are a data analyst, given the  summary: {summary}. Write concise bullets of narrative providing necessary insights."
 
     llm = load_llm2()
     if llm is None:
