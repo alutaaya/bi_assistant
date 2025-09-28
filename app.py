@@ -458,7 +458,7 @@ def main():
     # --- Model evaluation (automatic + sidebar trigger)
     st.sidebar.subheader("Evaluation")
     if st.sidebar.button("Run Evaluation") or "eval_run" not in st.session_state:
-        llm = load_llm()
+        llm = load_llm2()
         qa_pairs = [
             {"query": "Total sales in 2022?", "result": "50000", "answer": "50000"},
             {"query": "Top-selling product?", "result": "Product A", "answer": "Product A"},
