@@ -12,6 +12,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
 from langchain.chat_models import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.evaluation.qa import QAEvalChain
 
 # PDF & text splitting
 from PyPDF2 import PdfReader
@@ -383,18 +385,15 @@ def construct_graph2():
     return chain.compile()
 
 
-# ------------------------
-# Main app (wiring + UI) - kept your flow and buttons but fixed logic and quoting errors
-# ------------------------
+#-------main function
 def main():
     st.set_page_config(layout="wide")
     st.markdown(
-    "<h1 style='text-align: center; font-weight: bold;color: blue;'>InsightForge Business Assistant</h1>",
-    unsafe_allow_html=True)
+        "<h1 style='text-align: center; font-weight: bold;color: blue;'>InsightForge Business Assistant</h1>",
+        unsafe_allow_html=True
+    )
 
-    ##st.title("InsightForge Business Assistant")
-
-    # Initialize an app state dict (TypedDict is static typing; at runtime we use a normal dict)
+    # Initialize app state dict
     state: appstate = {
         "csv_bytes": None,
         "doc_files": [],
@@ -423,99 +422,117 @@ def main():
         st.session_state["csv_bytes"] = None
     if "doc_texts" not in st.session_state:
         st.session_state["doc_texts"] = []
+    if "ask_stat" not in st.session_state:
+        st.session_state["ask_stat"] = ""
+    if "memory" not in st.session_state:
+        st.session_state["memory"] = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-    # ----- Process the csv (only once per upload)
+    # --- Process the csv (only once per upload)
     if csv_file:
-        csv_bytes: bytes = csv_file.read()  # Read file once
+        csv_bytes: bytes = csv_file.read()
         st.session_state["csv_bytes"] = csv_bytes
         df: pd.DataFrame = pd.read_csv(io.BytesIO(csv_bytes))
-        # Display in Streamlit
+
         st.header("Preview the uploaded CSV")
         st.dataframe(df.head())
         st.markdown("## Summary Statistics")
         st.dataframe(df.describe(include="all").T)
-        # Update app state
         state["csv_bytes"] = csv_bytes
 
-    # --- Process pdfs (store Document objects into state['doc_texts'])
+    # --- Process PDFs
     if doc_files:
         doc_texts = []
         for x in doc_files:
             if x.name.endswith(".pdf"):
-                #-- save the uploaded pdfs in a temporary file
-                with tempfile.NamedTemporaryFile(delete=False,suffix=".pdf") as tmp_file:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
                     tmp_file.write(x.read())
-                    temp_path=tmp_file.name
-                #---load using pyPDFLoader   
+                    temp_path = tmp_file.name
                 loader = PyPDFLoader(temp_path)
                 documents = loader.load()
-                # extend doc_texts with Document-like objects
                 doc_texts.extend(documents)
             else:
                 st.warning(f"Skipped non-pdf file: {x.name}")
         st.session_state["doc_texts"] = doc_texts
         state["doc_texts"] = doc_texts
 
-    # --- Construct the workflows once
+    # --- Model evaluation (automatic + sidebar trigger)
+    st.sidebar.subheader("Evaluation")
+    if st.sidebar.button("Run Evaluation") or "eval_run" not in st.session_state:
+        llm = load_llm()
+        qa_pairs = [
+            {"query": "Total sales in 2022?", "result": "50000", "answer": "50000"},
+            {"query": "Top-selling product?", "result": "Product A", "answer": "Product A"},
+        ]
+        eval_chain = QAEvalChain.from_llm(llm)
+        grades = eval_chain.evaluate(qa_pairs)
+
+        st.session_state["eval_run"] = True
+        st.markdown("### Model Evaluation Results")
+        st.json(grades)
+
+    # --- Construct the workflows
     processgraph = construct_graph1()
     processgraph2 = construct_graph2()
 
-    # --- Function for asking ad-hoc (we'll use processgraph2 but must supply ask_stat to adhoc agent)
-    options=["chat_with_csv", "ask_for_insights"]
+    # --- Buttons for clearing
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Clear Chat"):
+            st.session_state["chat_history"] = []
+            st.session_state["ask_stat"] = ""
+            st.success("Chat history cleared!")
+    with col2:
+        if st.button("Reset Assistant"):
+            st.session_state["chat_history"] = []
+            st.session_state["memory"].clear()
+            st.session_state["ask_stat"] = ""
+            st.success("Assistant fully reset (chat + memory)!")
+
+    # --- Ask a question
+    options = ["chat_with_csv", "ask_for_insights"]
     choice = st.selectbox("Select an option:", ["--Select--"] + options)
-    ask_stat=st.text_input("Ask a question")
-    ask_stat=ask_stat.strip().lower()
+    ask_stat = st.text_input("Ask a question", value=st.session_state["ask_stat"]).strip().lower()
+    st.session_state["ask_stat"] = ask_stat
     state["ask_stat"] = ask_stat
+
     if st.button("Ask") and ask_stat:
-        if not ask_stat:
-            st.warning("Please type a question before clicking Ask.")
-        else:
-            state["ask_stat"] = ask_stat  # store question in state
         if choice == "chat_with_csv":
-            # Use plain dict, not st.session_state
-            state_result = processgraph2.invoke(state.copy())  # ✅ pass a copy
+            state_result = processgraph2.invoke(state.copy())
             result_text = state_result.get("adhoc_result", "No result")
             st.write(result_text)
-            # update chat history
+            st.session_state["memory"].save_context({"input": ask_stat}, {"output": str(result_text)})
             st.session_state["chat_history"].append((ask_stat, str(result_text)))
-            # optionally sync back some state to session
             st.session_state["adhoc_result"] = result_text
 
         elif choice == "ask_for_insights":
-            state_result = processgraph.invoke(state.copy())  # ✅ pass a copy
+            state_result = processgraph.invoke(state.copy())
             result_text = state_result.get("query_answer", "No result")
             st.write(result_text)
+            st.session_state["memory"].save_context({"input": ask_stat}, {"output": str(result_text)})
             st.session_state["chat_history"].append((ask_stat, str(result_text)))
             st.session_state["query_answer"] = result_text
         else:
             st.warning("Please select a valid option from the dropdown.")
-        
-    
-  
 
-    # ----- Displaying summary statistics (manual trigger)
+    # --- Display summary statistics
     if st.button("Statistical_Summary"):
         state = filepath_agent(state)
         state = stats_agent(state)
         summary = state.get("statistics_summary", {})
-        
-        
 
-    # ----- Display visuals
+    # --- Display visuals
     if st.button("Data visualisation"):
         state = filepath_agent(state)
         state = visualisation_agent(state)
 
-    # Clear chat
-    if st.button("Clear Chat"):
-        st.session_state["chat_history"] = []
-
-    # Display chat history
-    ##for q, a in st.session_state["chat_history"]:
-        ##st.markdown(f"**You:** {q}")
-        ##st.markdown(f"**Assistant:** {a}")
-        ##st.markdown("---")
+    # --- Display chat history
+    st.markdown("### Chat History")
+    for q, a in st.session_state["chat_history"]:
+        st.markdown(f"**You:** {q}")
+        st.markdown(f"**Assistant:** {a}")
+        st.markdown("---")
 
 
 if __name__ == "__main__":
     main()
+
