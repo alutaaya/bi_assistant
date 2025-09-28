@@ -283,34 +283,80 @@ def vectorstore_agent(state: appstate):
         state["vectordb"] = None
     return state
 
+##--- function for memory 
+def save_concise_memory(input_text: str, result_text: str):  
+    """
+    Summarize result_text concisely and save to ConversationBufferMemory.
+     Also append to chat_history for display.
+    """
+    llm = load_llm2()
+    summary_prompt = f"Summarize the following answer concisely for future reference:\n\n{result_text}"
+    try:   
+        concise_summary = llm.predict(summary_prompt).strip()
+    except Exception: 
+         concise_summary = result_text  # fallback
+    # save to Streamlit memory
+    if "memory" in st.session_state:    
+        st.session_state["memory"].save_context({"input": input_text}, {"output": concise_summary})
+    # append to chat history
+    if "chat_history" in st.session_state:    
+        st.session_state["chat_history"].append((input_text, concise_summary))
+    # also optionally save numeric memory for fast retrieval
+    if "numeric_memory" not in st.session_state:  
+        st.session_state["numeric_memory"] = {}
+    # try to extract numbers from answer for structured memory
+    import re
+    numbers = re.findall(r"[\d,]+(?:\.\d+)?", concise_summary)
+    if numbers:    
+        # remove commas
+        num_values = [float(n.replace(",", "")) for n in numbers]
+        # store last numeric result by input_text key
+        st.session_state["numeric_memory"][input_text.lower()] = num_values[0]
+    return concise_summary
 
-# Answering agent (kept your prompt and behavior; fixed response extraction)
+
 def answering_agent(state: appstate):
     query = state.get("ask_stat", "")
     vectorstore = state.get("vectordb", None)
     if not vectorstore or not query:
         return state
-
+    # retrieve relevant chunks from vectordb
     retrieve_relevant_chunks = vectorstore.similarity_search(query, k=12)
     context = "\n\n".join(
         [f"[Source: {d.metadata.get('source', 'unknown')}]\n{d.page_content}" for d in retrieve_relevant_chunks]
     )
+    # include recent memory in the prompt (last 5)
+    memory_history = ""
+    if st.session_state.get("memory"):
+        buffer = st.session_state["memory"].buffer
+        memory_history = "\n".join(
+            [f"Q: {m.input}\nA: {m.output}" for m in buffer[-5:]]
+        )
+    # also include numeric memory if available
+    numeric_memory_text = ""
+    if st.session_state.get("numeric_memory"):
+        numeric_memory_text = "\n".join(
+            [f"{k}: {v}" for k, v in st.session_state["numeric_memory"].items()]
+        )
     prompt = (
-        "You are business assistant. Answer using ONLY the provided context. "
-        "If the answer is not in the context, say you don't know. Be concise.\n\n"
-        f"Context:\n{context}\n\nQuestion:\n{query}\nAnswer:"
+        "You are a business assistant. Use the following memory, numeric memory, and context to answer concisely.\n\n"
+        f"Memory:\n{memory_history}\n\n"
+        f"Numeric Memory:\n{numeric_memory_text}\n\n"
+        f"Context:\n{context}\n\n"
+        f"Question:\n{query}\nAnswer concisely:"
     )
+
     llm = load_llm2()
-    if llm is None:
-        return state
     response = llm.predict(prompt)
-    # extract string
     if hasattr(response, "content"):
         answer = response.content.strip()
     else:
         answer = str(response).strip()
     state["query_answer"] = answer
+    # save concise summary to memory
+    save_concise_memory(query, answer)
     return state
+
 
 
 def restricted_adhoc_agent(state: dict):
@@ -333,21 +379,21 @@ def restricted_adhoc_agent(state: dict):
         df["year"] = df["date"].dt.year
         df["month"] = df["date"].dt.month
 
-    # Load LLM
+
     llm = load_llm()
     pandas_ai = PandasAI(llm)
 
     # Run query safely
     try:
         result = pandas_ai.run(df, ask_stat, show_code=True, is_conversational_answer=True)
-        state["adhoc_result"] = str(result)  # ensure string
+        result_text = str(result)
+        # save concise summary to memory
+        concise_summary = save_concise_memory(ask_stat, result_text)
+        state["adhoc_result"] = concise_summary
     except Exception as e:
         state["adhoc_result"] = f"Error executing PandasAI query: {e}"
 
-    return state  # ✅ always return state dict
-
-
-
+    return state
 
 
 # ------------------------
@@ -457,29 +503,30 @@ def main():
 
    # --- Model evaluation with QAEvalChain
     if st.sidebar.button("Run Evaluation"):
-        
-        llm = load_llm2()  # use the same LLM you already configured
+    
+    llm = load_llm2()  # use the same LLM you already configured
 
-        # Ground truth examples
-        examples = [
-            {"query": "Total sales in 2022?", "answer": "50000"},
-            {"query": "Top-selling product?", "answer": "Product A"},
-            ]
+    # Ground truth examples
+    examples = [
+        {"query": "Total sales in 2022?", "answer": "50000"},
+        {"query": "Top-selling product?", "answer": "Product A"},
+    ]
 
-        # Example predictions (from your mock or model output)
-        predictions = [
-            {"query": "Total sales in 2022?", "answer": "50000"},
-            {"query": "Top-selling product?", "answer": "Product A"},
-        ]
+    # Example predictions (must use "result" instead of "answer")
+    predictions = [
+        {"query": "Total sales in 2022?", "result": "50000"},
+        {"query": "Top-selling product?", "result": "Product A"},
+    ]
 
-        # Build evaluation chain
-        eval_chain = QAEvalChain.from_llm(llm)
+    # Build evaluation chain
+    eval_chain = QAEvalChain.from_llm(llm)
 
-        # Run evaluation
-        grades = eval_chain.evaluate(examples, predictions)
+    # Run evaluation
+    grades = eval_chain.evaluate(examples, predictions)
 
-        st.markdown("### Model Evaluation Results")
-        st.json(grades)
+    st.markdown("### Model Evaluation Results")
+    st.json(grades)
+
 
     # --- Construct the workflows
     processgraph = construct_graph1()
