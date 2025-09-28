@@ -503,29 +503,23 @@ def main():
 
    # --- Model evaluation with QAEvalChain
     if st.sidebar.button("Run Evaluation"):
-    
-    llm = load_llm2()  # use the same LLM you already configured
-
-    # Ground truth examples
-    examples = [
+        llm = load_llm2()  # use the same LLM you already configured
+        # Ground truth examples
+        examples = [
         {"query": "Total sales in 2022?", "answer": "50000"},
         {"query": "Top-selling product?", "answer": "Product A"},
-    ]
-
-    # Example predictions (must use "result" instead of "answer")
-    predictions = [
+        ]
+        # Example predictions (must use "result" instead of "answer")
+        predictions = [
         {"query": "Total sales in 2022?", "result": "50000"},
         {"query": "Top-selling product?", "result": "Product A"},
-    ]
-
-    # Build evaluation chain
-    eval_chain = QAEvalChain.from_llm(llm)
-
-    # Run evaluation
-    grades = eval_chain.evaluate(examples, predictions)
-
-    st.markdown("### Model Evaluation Results")
-    st.json(grades)
+        ]
+        # Build evaluation chain
+        eval_chain = QAEvalChain.from_llm(llm)
+        # Run evaluation
+        grades = eval_chain.evaluate(examples, predictions)
+        st.markdown("### Model Evaluation Results")
+        st.json(grades)
 
 
     # --- Construct the workflows
