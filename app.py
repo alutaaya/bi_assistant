@@ -455,22 +455,21 @@ def main():
         st.session_state["doc_texts"] = doc_texts
         state["doc_texts"] = doc_texts
 
-    # --- Model evaluation (automatic + sidebar trigger)
-    # --- Model evaluation with QAEvalChain
+   # --- Model evaluation with QAEvalChain
     if st.sidebar.button("Run Evaluation"):
         
         llm = load_llm2()  # use the same LLM you already configured
 
-        # Example ground truth ("examples")
+        # Ground truth examples
         examples = [
-        {"query": "Total sales in 2022?", "result": "50000"},
-        {"query": "Top-selling product?", "result": "Product A"},
-        ]
+            {"query": "Total sales in 2022?", "answer": "50000"},
+            {"query": "Top-selling product?", "answer": "Product A"},
+            ]
 
-        # Example predictions (normally you'd collect these from your workflows)
+        # Example predictions (from your mock or model output)
         predictions = [
-        {"query": "Total sales in 2022?", "answer": "50000"},
-        {"query": "Top-selling product?", "answer": "Product A"},
+            {"query": "Total sales in 2022?", "answer": "50000"},
+            {"query": "Top-selling product?", "answer": "Product A"},
         ]
 
         # Build evaluation chain
