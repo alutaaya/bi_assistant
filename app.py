@@ -456,17 +456,29 @@ def main():
         state["doc_texts"] = doc_texts
 
     # --- Model evaluation (automatic + sidebar trigger)
-    st.sidebar.subheader("Evaluation")
-    if st.sidebar.button("Run Evaluation") or "eval_run" not in st.session_state:
-        llm = load_llm2()
-        qa_pairs = [
-            {"query": "Total sales in 2022?", "result": "50000", "answer": "50000"},
-            {"query": "Top-selling product?", "result": "Product A", "answer": "Product A"},
-        ]
-        eval_chain = QAEvalChain.from_llm(llm)
-        grades = eval_chain.evaluate(qa_pairs)
+    # --- Model evaluation with QAEvalChain
+    if st.sidebar.button("Run Evaluation"):
+        
+        llm = load_llm2()  # use the same LLM you already configured
 
-        st.session_state["eval_run"] = True
+        # Example ground truth ("examples")
+        examples = [
+        {"query": "Total sales in 2022?", "result": "50000"},
+        {"query": "Top-selling product?", "result": "Product A"},
+        ]
+
+        # Example predictions (normally you'd collect these from your workflows)
+        predictions = [
+        {"query": "Total sales in 2022?", "answer": "50000"},
+        {"query": "Top-selling product?", "answer": "Product A"},
+        ]
+
+        # Build evaluation chain
+        eval_chain = QAEvalChain.from_llm(llm)
+
+        # Run evaluation
+        grades = eval_chain.evaluate(examples, predictions)
+
         st.markdown("### Model Evaluation Results")
         st.json(grades)
 
