@@ -284,34 +284,37 @@ def vectorstore_agent(state: appstate):
     return state
 
 ##--- function for memory 
+
+
 def save_concise_memory(input_text: str, result_text: str):  
-    """
-    Summarize result_text concisely and save to ConversationBufferMemory.
-     Also append to chat_history for display.
-    """
     llm = load_llm2()
     summary_prompt = f"Summarize the following answer concisely for future reference:\n\n{result_text}"
     try:   
         concise_summary = llm.predict(summary_prompt).strip()
     except Exception: 
-         concise_summary = result_text  # fallback
-    # save to Streamlit memory
+        concise_summary = result_text  # fallback
+
     if "memory" in st.session_state:    
         st.session_state["memory"].save_context({"input": input_text}, {"output": concise_summary})
-    # append to chat history
+
     if "chat_history" in st.session_state:    
         st.session_state["chat_history"].append((input_text, concise_summary))
-    # also optionally save numeric memory for fast retrieval
+
     if "numeric_memory" not in st.session_state:  
         st.session_state["numeric_memory"] = {}
-    # try to extract numbers from answer for structured memory
-    import re
+
+    # ✅ safer number extraction
     numbers = re.findall(r"[\d,]+(?:\.\d+)?", concise_summary)
-    if numbers:    
-        # remove commas
-        num_values = [float(n.replace(",", "")) for n in numbers]
-        # store last numeric result by input_text key
+    num_values = []
+    for n in numbers:
+        try:
+            num_values.append(float(n.replace(",", "")))
+        except ValueError:
+            continue  # skip invalid ones
+
+    if num_values:
         st.session_state["numeric_memory"][input_text.lower()] = num_values[0]
+
     return concise_summary
 
 
