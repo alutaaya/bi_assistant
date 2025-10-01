@@ -63,17 +63,7 @@ class appstate(TypedDict, total=False):
     visualisation: Optional[Dict[str, Any]]
 
 
-# ------------------------
-# Utility: load LLM (cached)
-# ------------------------
-##@st.cache_resource
-##def load_llm():
-    ##groq_api = st.secrets.get("groq_api") or os.getenv("groq_api")
-    ##if not groq_api:
-        ##st.error("❌ ERROR: groq_api not found. Please set it in Streamlit secrets or .env file.")
-        ##return None
-    # instantiate ChatGroq exactly as you had it
-    ##return ChatGroq(model_name="openai/gpt-oss-120b", temperature=0, api_key=groq_api)
+
 
 
 #----Loading the llm to use for PandaAI
@@ -82,7 +72,7 @@ def load_llm():
     api_key=st.secrets["OPENAI_API_KEY"]
     return OpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
 
-
+#--- loading the llm for RAG
 def load_llm2():
     api_key=st.secrets["OPENAI_API_KEY"]
     return ChatOpenAI(model="gpt-3.5-turbo", temperature=0, api_key=api_key)
@@ -303,7 +293,7 @@ def save_concise_memory(input_text: str, result_text: str):
     if "numeric_memory" not in st.session_state:  
         st.session_state["numeric_memory"] = {}
 
-    # ✅ safer number extraction
+    
     numbers = re.findall(r"[\d,]+(?:\.\d+)?", concise_summary)
     num_values = []
     for n in numbers:
@@ -506,13 +496,13 @@ def main():
 
    # --- Model evaluation with QAEvalChain
     if st.sidebar.button("Run Evaluation"):
-        llm = load_llm2()  # use the same LLM you already configured
+        llm = load_llm2()  
         # Ground truth examples
         examples = [
         {"query": "Total sales in 2022?", "answer": "50000"},
         {"query": "Top-selling product?", "answer": "Product A"},
         ]
-        # Example predictions (must use "result" instead of "answer")
+        #predictions 
         predictions = [
         {"query": "Total sales in 2022?", "result": "50000"},
         {"query": "Top-selling product?", "result": "Product A"},
